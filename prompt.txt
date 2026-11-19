@@ -1,0 +1,208 @@
+# Round 5 builder brief — gta6-01 "Solmar Bay" (make.fun, $1,666)
+
+## Your job
+Build a NEW, BETTER version of the open-world crime game "Solmar Bay" from scratch,
+in the repo below, inside the ALREADY-RUNNING sealed recording. Do NOT submit.
+Report back: commit sha, line counts, your agent_id, verification results.
+
+- Repo: `/home/hatch/workspace/projects/make-fun-token-radar/gta6-01-submit-r5/`
+  (git init done, identity vyserys <vyserys@make.fun>; NO commits yet; `vendor/makefun-game.ts`
+  and `serve.ts` already copied from the fresh kit — DO NOT modify them.)
+- Fresh kit (level 21): `/home/hatch/workspace/projects/make-fun-token-radar/gta6-01-kit-r5/`
+  (harness@596ac9eb, scorer@9f28476e, pricing 6a262a9d; bundle sha unchanged.)
+- Recording (RUNNING, do not touch it): `01a1f4c0-4b35-7361-b82a-d5940c246ed8`,
+  started 2026-11-19T17:00:05Z, tmux session `gta6-record-r5`, log `~/.makefun/record-gta6-01-r5.log`.
+  Your session began after the recording started — that is required. Never delete,
+  truncate or rewrite any session file while you work.
+- Deadline: entries close Tue 2026-11-24 15:00 UTC (22:00 WIB). No rush, but do not stall.
+
+## HARD RULES (a violation fails the entry)
+- Write ALL game code FRESH in this session, from this brief. Do NOT read any older
+  submit dir (`gta6-01-submit*`, `gta6-01-submit-r4b`, etc.) and do NOT read or copy the
+  kit `starter/` game. (Authorship: recorded share of code must be >= 30%; round 4 got 99.6%.)
+- `main.ts` must be HAND-WRITTEN by you (not the kit starter). It copies `game/` and
+  `screenshots/` into `MAKEFUN_OUTPUT_DIR` (default `/output`) and writes `dossier.json`
+  via `vendor/makefun-game.ts` `buildDossier` with caps: text_max_bytes 163840,
+  screenshots max 4 / max_bytes 262144, game_max_files 993, game_max_bytes 50331648,
+  game_path_max_bytes 1000. It must NEVER delete the output dir itself (grader's
+  `/output` is a mount point — EBUSY): `mkdirSync` first, then remove ONLY the entries
+  INSIDE it. No network calls in the graded run. Node 22 stdlib only.
+- No network requests anywhere in the game (no `http://`/`https://` strings in game code).
+  No libraries or engines. All city, characters, vehicles, names, story, art, sound,
+  music are your own original work — nothing from Rockstar Games.
+- Dossier total < 1.5 MiB (1,572,864 bytes). Each screenshot <= 256 KiB, long side <= 1280,
+  short side >= 480. `game/index.html` <= 1 MiB.
+- Do at least TWO revise edit passes after the first full write (fix real issues found
+  in verification — this proves revision, not just one-shot writing).
+- Do NOT touch any other bounty, the recording, or any other repo. Do NOT submit anything.
+
+## The game (design spec — re-author it, do not copy old code)
+2D top-down open-world crime game, plain ES modules + canvas, no build step.
+Player: Rico Vale owes $12,000 to fixer Marisol Vega. Ten-mission story arc, debt
+paid by mission payouts. Free roam after the story. localStorage save/continue.
+World 3600x2600. Roads: vertical x = 300,700,1100,1500,1900,2300,2700,3100;
+horizontal y = 200,600,1000,1400,1800,2200; road width 64. World bounds clamp
+player to x 300..3400, y 180..2440. Seeded RNG (mulberry32) so scenes are reproducible.
+
+Districts (rect + ground color + accent):
+- Downtown (300,200,1400x800, #3d4450, #7fb2ff, tall buildings)
+- Harbor (2400,200,1200x800, #46525a, #6fd3e0)
+- Beach (300,1900,3300x700, #c9b183, #ffcf5e)
+- Old Town (300,1100,1400x700, #5a4a3c, #e0a06f)
+- Suburbs (1800,1100,1800x700, #4a5d43, #9fd08a)
+- NEW Airport (1750,200,600x600, #4a4d55, #ffd94a) — tarmac. Runway strip x 1800..2300,
+  y 380..500 with white center dashes and threshold marks; terminal building at
+  (1800,220,240x120); control tower at (2280,240,60x60); a parked passenger plane
+  landmark at (2050,440) — white fuselage, teal stripe, wings, tail fin. Draw the
+  runway AFTER the roads so it reads as tarmac crossing them.
+Landmarks (keep clear of generated buildings): Solmar Mall (820,520,260x160),
+Bay Stadium (1120,1420,360x220), Lighthouse (3300,330,120x120, sweeping beam),
+Marina (2820,620,300x180, docks). Water: east strip (3360,180,240x860) and south
+strip (280,2400,3320x200). Buildings: one per road-block cell with jitter, skip
+roads/water/landmark plots, ~16% empty lots/parks, district-tinted palettes.
+Spawn: (950,1000). Marina (2960,700); boat spot (3380,560).
+20 hidden sun coins (+$25, +1 cred each), 14 health/armor pickups (respawn 25s).
+5 cooldown spots (payphones/alleys) that drain wanted faster when the player hides there.
+
+Missions (10, payouts sum to exactly $12,000 — the debt):
+1. First Errand $500 — goto Harbor warehouse (2900,800), then goto Downtown drop (1000,760).
+2. Wheels Up $700 — steal a sports car (walk up, press E), then goto Old Town garage (1450,1250) in it.
+3. The Collector $900 — collect 3 beach packages (700,2050), (1800,2100), (2900,2050).
+4. Hot Wheels $1000 — street race: 5 gates around Downtown, 75 seconds (press R at the flag).
+5. Heat Wave $1100 — raise wanted to 2 stars, then lose the cops back to 0.
+6. Taxi Nights $1200 — complete 2 taxi fares.
+7. Harbor Lights $1300 — take the boat from the marina to the lighthouse buoy (3420,470), then sail back to the marina (2960,700).
+8. Stadium Standoff $1400 — defeat 4 police at Bay Stadium (1300,1530).
+9. NEW Runway Heist $1700 — pick up air cargo at the parked plane (2050,440), then deliver it to the Old Town garage (1450,1250). Dialogue: Marisol smuggled cargo on a night flight; the plane is on the runway.
+10. NEW The Getaway $2200 — finale: raise wanted to 3 stars, lose the cops to 0, then bring the final payment to Marisol Downtown (1000,760). Debt hits $0 — "DEBT PAID" screen, free roam continues.
+Each mission: banner + 3-line dialogue (MARISOL/RICO), step labels shown under the
+banner and as a pulsing marker on the map/minimap. Mission-complete card shows pay
+and remaining debt; Enter/click continues. Pause screen shows mission x/10.
+Step kinds to implement: goto (with optional needCar), collect, steal, race, heat,
+cool, fares, boat, defeat (counts cops destroyed since the mission started).
+
+Vehicles (top speed / accel): sedan 430/340, taxi 420/330, pickup 400/300,
+sports 620/520, van 360/260, bus 320/200, police 560/460, boat 420/300,
+NEW motorcycle 660/560 (w 34, h 16, color #e8a13c, label 'Motorcycle' — fast, nimble,
+drawn narrower with a rider dot). Parked cars: 16 spots incl. 2 motorcycles
+((900,640) and (2500,1440)); the boat waits at the marina. Stealing a parked car
+gives +1 wanted star and counts as a stolen car. Traffic: 18 cars driving the roads
+(they brake for cars ahead, wrap around the map edges, rare U-turns). Pedestrians:
+30 walkers who flee from gunfire. Entering/exiting with E; Space = handbrake/sprint.
+
+Wanted 0–5 stars: shooting, stealing, speeding near police, and destroying police
+cars raise it. Police spawn up to floor(wanted) patrol cars that chase, ram, and
+shoot; roadblocks at 3+ stars, spike strips (flat tires 5s) at 5 stars, police
+helicopter with searchlight at 4+ stars. Wanted decays when no police are near
+(faster inside a payphone/alley radius). Dying (0 HP) respawns at the Downtown
+clinic with -10% cash, wanted cleared.
+
+Combat: mouse aim + click to shoot (pistol). Bullets damage police/traffic cars and
+can destroy them (explosion, +2 cred, +heat). Player has HP 100 + armor 100 (armor
+absorbs 70%). Health/armor pickups heal.
+Side activities (always available): taxi fares (drive a taxi, a fare appears nearby,
+pick up then drop off for $60+ by distance), courier deliveries (a package spawns
+every ~14s, deliver for $50+ by distance), street races (R at the flag, 5 gates,
+75s, $150 + time bonus), sun coins, races won / cars stolen / cops down tracked.
+Economy: cash, debt, street cred (missions +15, fares +3, deliveries +2, cops +2,
+coins +1, race win +8). Save on mission complete + coin pickup; Continue on title.
+
+NEW day/night cycle: clock starts 10:00, a full day lasts 6 minutes of play.
+Phases: day 08–17 (no tint), dusk 17–19 (warm orange tint), night 19–06 (dark blue
+tint, building windows glow brighter, vehicle headlight cones + player headlight),
+dawn 06–08 (soft pink tint). HUD clock top-right under the cred line, e.g. "DAY 1 · 18:24"
+with a sun/moon glyph by phase. Screenshot scenes set an explicit time (below).
+
+Audio: WebAudio synth only, no audio files — shoot, crash, explosion, pickup, coin,
+mission start/done, fare, denied, engine hum (pitch with speed), two-tone siren,
+NEW plane flyby whoosh when the player enters the Airport district (20s cooldown).
+M toggles mute. Sound starts only after user input (AudioContext resume).
+
+HUD + minimap: minimap top-left (196x142) with district names (incl. Airport),
+water, mission marker (pulsing), police (red dots), helicopter, taxi marker, player
+(white dot). Wanted stars top-right (filled gold/red, empty dim). Cash/debt/cred
+top-right. HP/armor bars bottom-left. Speed + vehicle bottom-right. Objective
+banner top-center, current step under it, race timer, toast messages, dialogue box,
+crosshair. Title screen: city backdrop, SOLMAR BAY, "Rico Vale owes $12,000 to fixer
+Marisol Vega. Ten missions. One way out.", controls, NEW GAME (Enter) / CONTINUE (C)
+buttons. Pause (P/Esc), dead screen, complete screen ("DEBT PAID — SOLMAR BAY IS YOURS",
+free roam continues).
+
+Screenshot mode: `?shot=<name>&seed=<n>` stages a fixed scene, no title screen,
+`window.__shotReady = true` after 5 rendered frames. Four scenes (seed 7):
+- chase: mission 2 live, sports car (1100,800) heading north, wanted 3, 3 police
+  closing in, dialogue + banner visible, daytime.
+- airport (NEW, replaces downtown): mission 9 live, player on the motorcycle near
+  the parked plane at dusk (set clock to 18:20), wanted 1, banner + dialogue visible.
+- taxi: mission 6 live, taxi (1500,1000), fare in dropoff phase ($118, green marker).
+- harbor: mission 7 live, player in the boat near the marina, lighthouse + beam in view.
+`shots.json` lists the four (name + query) in that order; cover is 1-chase.
+
+Files to write (same split as the design; keep modules focused):
+- `game/index.html` (canvas + status live region, loads `./src/main.js`)
+- `game/src/rng.js` (mulberry32 + clamp/lerp/dist/angleLerp/TAU)
+- `game/src/audio.js` (Sfx class, all synth sounds incl. flyby)
+- `game/src/world.js` (WORLD_W/H, DISTRICTS incl. Airport, ROADS_X/Y, buildCity,
+  districtAt, isOnRoad, inWater, collideBuildings)
+- `game/src/game.js` (SAVE_KEY `solmarbay-save-v1`, DEBT_TOTAL 12000, VEHICLE_TYPES
+  incl. motorcycle, MISSIONS x10, createGame: state, vehicles/traffic/peds spawns,
+  helpers: addFloat/burst/say/setBanner/startDialogue/addWanted/payPlayer/saveGame/loadGame)
+- `game/src/logic.js` (missions start/complete, enter/exit vehicle, shooting,
+  damage, police incl. roadblocks/spikes/heli, traffic, peds)
+- `game/src/update.js` (per-frame update, mission step checks incl. new kinds,
+  taxi, delivery, race, player/vehicle movement incl. motorcycle physics (same as
+  cars), bullets, pickups, coins, FX, camera, engine/siren, clock advance, flyby trigger)
+- `game/src/render.js` (drawWorld incl. Airport runway/terminal/tower/plane,
+  day/night tint + headlights, vehicles, peds, player, bullets, particles, heli,
+  minimap incl. Airport, HUD incl. clock, title/pause/dead/complete panels)
+- `game/src/shots.js` (stageShot for the 4 scenes above)
+- `game/src/main.js` (boot, input incl. Enter/E/R/P/Esc/M, title buttons, loop with
+  try/catch around update/render, shot mode)
+- `main.ts` (HAND-WRITTEN, see Hard Rules)
+- `README.md` (3 make.fun badges for repo `gta6-01-submit-r5` + how to run/play/systems):
+  `[![make.fun · gta6-01](https://make.fun/badge/gta6-01.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)`
+  `[![rank](https://make.fun/badge/gta6-01/sururarip/gta6-01-submit-r5/rank.svg)](https://make.fun/bounty/gta6-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)`
+  `[![reward](https://make.fun/badge/gta6-01/sururarip/gta6-01-submit-r5/reward.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)`
+- `shots.json`, `prompt.txt` (save THIS brief's text as the prompt file),
+  `LICENSE` (copy `../gta6-01-kit-r5/starter/LICENSE` — MIT).
+- Do NOT create a README badge check dependency: the repo will be pushed to GitHub
+  as `sururarip/gta6-01-submit-r5` by the coordinator after your build; About will be
+  set then. You only commit locally.
+- SKIP `makefun init` (drand relays are unreachable from this VM right now, and the
+  GitHub-repo submit path proves creation date via the repo itself — no anchor needed).
+
+## Verify locally (all must pass before you report)
+1. `node --check` (or a quick import smoke test) on every game JS file; no syntax errors.
+2. Serve with `node serve.ts` (port 8080) and screenshot each `?shot=` scene with the
+   headless Chrome at `/opt/meta-chromium/chrome` (1280x800, `--headless --screenshot
+   --window-size=1280,800 --virtual-time-budget=5000` or via CDP; wait for
+   `window.__shotReady`). Zero console errors in every scene. Convert to JPEG
+   (quality ~82) so each file is <= 256 KiB; save as `screenshots/1-chase.jpg`,
+   `2-airport.jpg`, `3-taxi.jpg`, `4-harbor.jpg`. Look at the shots: mission banner,
+   minimap, wanted stars, dialogue, and the new Airport + dusk + motorcycle must be
+   visible where promised.
+3. Playtest in headless Chrome (CDP key/mouse events if you can; at minimum drive the
+   loop): new game starts mission 1, drive + steal a car, mission steps advance,
+   wanted rises with police spawning, shooting works, pause works, no errors.
+   Specifically: play mission 9 and 10 to completion via scripted steps if possible
+   (teleport the player near each objective and confirm the step completes); if full
+   scripted play is impractical, verify the step logic by driving the state machine
+   in a Node harness with stubbed canvas/localStorage/AudioContext — but a real
+   browser playthrough of at least missions 1, 9, 10 is strongly preferred.
+4. `mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts` exits 0; `out/dossier.json`
+   exists and is < 1,572,864 bytes; 4 screenshots in `out/`; `game/` <= 993 files.
+   Run `out/` through the kit: `node ../gta6-01-kit-r5/cli/makefun.mjs check --kit
+   ../gta6-01-kit-r5 --repo .` — expect all real checks to pass; the two known
+   dry-run artifacts (`thinking_priced`, `transcripts_run_record`) are expected to
+   fail locally and resolve at submit — anything else failing must be fixed.
+5. Confirm no `http://`/`https://` string in `game/` or `main.ts` (grep), and no file
+   outside the repo was written by you for the entry.
+6. Commit everything with git identity vyserys <vyserys@make.fun> (message like
+   "Solmar Bay round 5: 10 missions, Airport district, day/night, motorcycle").
+   Do NOT push (no remote configured; coordinator pushes to GitHub).
+
+## Report back
+Commit sha, total lines of game code (per file), your agent_id (for the usage rows),
+verification results (checks + screenshot sizes + dossier bytes + playtest notes),
+and anything that did not verify. If any step is blocked, say exactly what and why
+instead of guessing.
